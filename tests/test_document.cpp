@@ -187,7 +187,7 @@ public:
         this->setg(begin, begin, end);
     }
 
-    typename std::basic_streambuf<T>::int_type underflow()
+    typename std::basic_streambuf<T>::int_type underflow() PUGIXML_OVERRIDE
     {
         return this->gptr() == this->egptr() ? std::basic_streambuf<T>::traits_type::eof() : std::basic_streambuf<T>::traits_type::to_int_type(*this->gptr());
     }
@@ -494,6 +494,15 @@ TEST_XML(document_save_declaration_latin1, "<node/>")
 	doc.save(writer, STR(""), pugi::format_default, encoding_latin1);
 
 	CHECK(writer.as_narrow() == "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<node />\n");
+}
+
+TEST_XML(document_save_declaration_raw, "<node/>")
+{
+	xml_writer_string writer;
+
+	doc.save(writer, STR(""), pugi::format_raw, get_native_encoding());
+
+	CHECK(writer.as_string() == STR("<?xml version=\"1.0\"?><node/>"));
 }
 
 struct temp_file
@@ -1092,7 +1101,7 @@ TEST(document_progressive_truncation)
 			bool result = doc.load_buffer_inplace(truncated_data, i, parse_default | parse_fragment);
 
 			// some truncate locations are parseable - those that come after declaration, declaration + doctype, declaration + doctype + comment and eof
-			CHECK(((i - 21) < 3 || (i - 66) < 3 || (i - 95) < 3 || i == original_size) ? result : !result);
+			CHECK(((i >= 21 && i <= 23) || (i >= 66 && i <= 68) || (i >= 95 && i <= 97) || i == original_size) ? result : !result);
 		}
 	}
 
